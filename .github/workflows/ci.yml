@@ -1,0 +1,20 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -e ".[dev]"
+      - run: pytest -q
+      - name: Undefended app must lose, fully defended app must do better
+        run: |
+          injection-lab run override-print-user && exit 1 || true
+          injection-lab run override-print-user --defense output_guard
+      - run: injection-lab eval --markdown docs/results-mock.md --json docs/results-mock.json
